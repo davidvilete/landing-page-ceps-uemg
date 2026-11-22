@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Landing page interativa para consulta local de CEPs e logradouros de Passos, MG. Projeto acadêmico do curso de Sistemas de Informação da UEMG — Unidade Acadêmica de Carangola.">
+  <title>Consulta de CEPs — Passos, MG | Sistemas de Informação UEMG Carangola</title>
+  <link rel="icon" type="image/png" href="./assets/logo-si.png">
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#busca-cep">Pular para a busca de CEPs</a>
+
+  <!-- 3.1. Cabeçalho (Header) -->
+  <header class="site-header" role="banner">
+    <div class="container header-inner">
+      <a href="#topo" class="brand" aria-label="Início — Consulta de CEPs de Passos, MG — Sistemas de Informação UEMG Carangola">
+        <img
+          src="./assets/logo-si.png"
+          alt="Logotipo do curso de Sistemas de Informação da UEMG Carangola"
+          class="brand-logo"
+          width="56"
+          height="56"
+        >
+        <div class="brand-text">
+          <span class="brand-title">Sistemas de Informação</span>
+          <span class="brand-subtitle">UEMG — Unidade Acadêmica de Carangola</span>
+        </div>
+      </a>
+
+      <nav class="header-nav" aria-label="Navegação principal">
+        <ul class="nav-list">
+          <li><a href="#busca-cep" class="nav-link">Consultar CEP</a></li>
+          <li>
+            <button type="button" class="nav-link nav-button" data-modal-target="modal-sobre">
+              Sobre o Projeto
+            </button>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- 3.2. Seção de Destaque (Hero) -->
+  <section id="topo" class="hero" aria-labelledby="hero-heading">
+    <div class="hero-overlay" aria-hidden="true"></div>
+    <div class="container hero-content">
+      <p class="hero-badge">
+        <span class="hero-badge-dot" aria-hidden="true"></span>
+        Município Atendido: Passos — Minas Gerais
+      </p>
+
+      <h1 id="hero-heading" class="hero-title">
+        Consulta Rápida de CEPs de <span>Passos, MG</span>
+      </h1>
+
+      <p class="hero-description">
+        Encontre instantaneamente o Código de Endereçamento Postal de ruas, avenidas e praças
+        de Passos com busca reativa local, sem rastreamento e 100% em tecnologias web puras.
+      </p>
+
+      <div class="hero-actions">
+        <a href="#busca-cep" class="btn-primary">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          Iniciar Consulta
+        </a>
+      </div>
+
+      <dl class="hero-stats" aria-label="Resumo da base local de logradouros">
+        <div class="stat-item">
+          <dt>Logradouros</dt>
+          <dd id="stat-total">--</dd>
+        </div>
+        <div class="stat-item">
+          <dt>Ruas</dt>
+          <dd id="stat-ruas">--</dd>
+        </div>
+        <div class="stat-item">
+          <dt>Avenidas</dt>
+          <dd id="stat-avenidas">--</dd>
+        </div>
+        <div class="stat-item">
+          <dt>Praças</dt>
+          <dd id="stat-pracas">--</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- 3.3. Área Central de Busca e Exibição de Resultados (Main) -->
+  <main id="busca-cep" class="main-content">
+    <div class="container">
+      <section class="search-section" aria-labelledby="search-heading">
+        <div class="section-header">
+          <h2 id="search-heading" class="section-title">Pesquisar Logradouro em Passos</h2>
+          <p class="section-subtitle">
+            Digite ao menos <strong>3 caracteres</strong> do nome da rua, avenida ou praça para exibir as sugestões.
+          </p>
+        </div>
+
+        <div class="search-card">
+          <form class="search-form" id="search-form" autocomplete="off" novalidate>
+            <label for="logradouro-input" class="search-label">
+              Nome do logradouro
+            </label>
+
+            <div class="combobox-wrapper" id="combobox-wrapper">
+              <div class="input-group">
+                <span class="input-icon" aria-hidden="true">
+                  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  </svg>
+                </span>
+
+                <input
+                  type="search"
+                  id="logradouro-input"
+                  name="logradouro"
+                  class="search-input"
+                  placeholder="Ex.: Avenida Arouca, Praça Bruxelas, Rua Acre..."
+                  aria-autocomplete="list"
+                  aria-expanded="false"
+                  aria-controls="suggestions-list"
+                  aria-describedby="search-hint"
+                  role="combobox"
+                  autocomplete="off"
+                  spellcheck="false"
+                >
+
+                <button
+                  type="button"
+                  id="clear-search-btn"
+                  class="clear-btn"
+                  aria-label="Limpar busca"
+                  hidden
+                >
+                  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Menu de Sugestões (Dropdown / Autocomplete) -->
+              <ul
+                id="suggestions-list"
+                class="suggestions-list"
+                role="listbox"
+                aria-label="Sugestões de logradouros"
+                hidden
+              ></ul>
+            </div>
+
+            <div class="search-meta">
+              <p id="search-hint" class="search-hint" role="status" aria-live="polite">
+                Carregando base local de CEPs de Passos, MG...
+              </p>
+            </div>
+          </form>
+
+          <div class="quick-examples" aria-label="Exemplos rápidos de busca">
+            <span class="quick-examples-label">Sugestões rápidas:</span>
+            <button type="button" class="example-chip" data-example="Avenida Arouca">Avenida Arouca</button>
+            <button type="button" class="example-chip" data-example="Avenida Brasil">Avenida Brasil</button>
+            <button type="button" class="example-chip" data-example="Praça Bruxelas">Praça Bruxelas</button>
+            <button type="button" class="example-chip" data-example="Rua Acre">Rua Acre</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Área de Apresentação de Dados & Destaque ao CEP -->
+      <section class="result-section" aria-labelledby="result-heading" aria-live="polite">
+        <h2 id="result-heading" class="sr-only">Resultado da consulta de CEP</h2>
+
+        <!-- Estado Inicial (antes de selecionar um logradouro) -->
+        <div id="result-empty" class="result-placeholder">
+          <div class="placeholder-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+          </div>
+          <h3>Nenhum logradouro selecionado</h3>
+          <p>
+            Use o campo de busca acima, digite pelo menos 3 caracteres e selecione um dos
+            logradouros sugeridos para visualizar os dados completos e o CEP em destaque.
+          </p>
+        </div>
+
+        <!-- Card de Resultado Completo -->
+        <article id="result-card" class="result-card" hidden>
+          <header class="result-card-header">
+            <div class="result-type-row">
+              <span id="result-badge" class="type-badge">Logradouro</span>
+              <span class="result-city-tag">Passos — MG</span>
+            </div>
+            <h3 id="result-logradouro" class="result-logradouro">—</h3>
+          </header>
+
+          <!-- Destaque Absoluto ao CEP -->
+          <div class="cep-spotlight">
+            <div class="cep-spotlight-info">
+              <span class="cep-spotlight-label">Código de Endereçamento Postal (CEP)</span>
+              <p id="result-cep" class="cep-spotlight-value">00000-000</p>
+            </div>
+            <button type="button" id="copy-cep-btn" class="btn-copy">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <span id="copy-cep-label">Copiar CEP</span>
+            </button>
+          </div>
+
+          <!-- Detalhes Estruturados do Logradouro -->
+          <dl class="result-details">
+            <div class="detail-item">
+              <dt>Logradouro</dt>
+              <dd id="detail-logradouro">—</dd>
+            </div>
+
+            <div class="detail-item" id="detail-complemento-row" hidden>
+              <dt>Complemento / Trecho</dt>
+              <dd id="detail-complemento">—</dd>
+            </div>
+
+            <div class="detail-item">
+              <dt>Bairro</dt>
+              <dd id="detail-bairro">—</dd>
+            </div>
+
+            <div class="detail-item">
+              <dt>Localidade / UF</dt>
+              <dd id="detail-localidade">—</dd>
+            </div>
+
+            <div class="detail-item">
+              <dt>DDD</dt>
+              <dd id="detail-ddd">—</dd>
+            </div>
+
+            <div class="detail-item">
+              <dt>Código IBGE</dt>
+              <dd id="detail-ibge">—</dd>
+            </div>
+          </dl>
+        </article>
+      </section>
+
+      <!-- Seção Informativa Complementar -->
+      <section class="info-section" aria-labelledby="info-heading">
+        <h2 id="info-heading" class="section-title">Como funciona a consulta local</h2>
+        <div class="info-grid">
+          <article class="info-card">
+            <div class="info-icon" aria-hidden="true">01</div>
+            <h3>Base JSON Consolidada</h3>
+            <p>
+              Dados reais de ruas, avenidas e praças de Passos (MG) extraídos da API pública ViaCEP,
+              higienizados sem duplicidades e carregados localmente via <code>fetch()</code>.
+            </p>
+          </article>
+
+          <article class="info-card">
+            <div class="info-icon" aria-hidden="true">02</div>
+            <h3>Autocomplete Inteligente</h3>
+            <p>
+              Filtro dinâmico ativado a partir do 3º caractere digitado, insensível a acentos e
+              maiúsculas, com navegação completa por mouse e teclado.
+            </p>
+          </article>
+
+          <article class="info-card">
+            <div class="info-icon" aria-hidden="true">03</div>
+            <h3>Privacidade Total</h3>
+            <p>
+              Todo o processamento ocorre estritamente na memória do navegador, sem envio de dados
+              a servidores externos, sem cookies e sem telemetria.
+            </p>
+          </article>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- 3.4. Rodapé (Footer) -->
+  <footer class="site-footer" role="contentinfo">
+    <div class="container footer-grid">
+      <div class="footer-logos">
+        <div class="footer-logo-group">
+          <img
+            src="./assets/logo-si.png"
+            alt="Logotipo do curso de Sistemas de Informação da UEMG Carangola"
+            class="footer-logo footer-logo-si"
+            width="64"
+            height="64"
+          >
+          <a
+            href="https://www.uemg.br/carangola"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="footer-uemg-link"
+            aria-label="Acessar a página oficial da UEMG Unidade Acadêmica de Carangola (abre em nova aba)"
+          >
+            <img
+              src="./assets/logo-uemg.png"
+              alt="Logotipo oficial da UEMG — Unidade Acadêmica de Carangola"
+              class="footer-logo footer-logo-uemg"
+              width="64"
+              height="64"
+            >
+          </a>
+        </div>
+
+        <div class="footer-institutional">
+          <p class="footer-course">Bacharelado em Sistemas de Informação — 2º Período</p>
+          <p class="footer-unit">Universidade do Estado de Minas Gerais (UEMG) — Unidade Carangola</p>
+        </div>
+      </div>
+
+      <nav class="footer-nav" aria-label="Informações legais e sobre o projeto">
+        <ul class="footer-links">
+          <li>
+            <button type="button" class="footer-link-btn" data-modal-target="modal-sobre">
+              Sobre
+            </button>
+          </li>
+          <li>
+            <button type="button" class="footer-link-btn" data-modal-target="modal-termos">
+              Termos de Uso
+            </button>
+          </li>
+          <li>
+            <button type="button" class="footer-link-btn" data-modal-target="modal-privacidade">
+              Privacidade
+            </button>
+          </li>
+        </ul>
+      </nav>
+    </div>
+
+    <div class="footer-bottom">
+      <div class="container footer-bottom-inner">
+        <p>
+          &copy; 2026 Atividade Prática — Programação 2 · Consulta de CEPs de Passos, MG.
+        </p>
+        <p class="footer-credits">
+          Dados: ViaCEP · Foto de Passos:
+          <a
+            href="https://commons.wikimedia.org/wiki/File:Passos_-_Regi%C3%A3o_central_de_Passos,_com_Pra%C3%A7a_da_Matriz_(no_centro).jpg"
+            target="_blank"
+            rel="noopener noreferrer"
+          >Enio1966 / Wikimedia Commons (CC BY-SA 4.0)</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- =========================================================
+       JANELAS FLUTUANTES (MODAIS ACESSÍVEIS)
+       ========================================================= -->
+
+  <!-- Modal 1: Sobre -->
+  <div
+    id="modal-sobre"
+    class="modal-overlay"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modal-sobre-title"
+    hidden
+  >
+    <div class="modal-dialog">
+      <header class="modal-header">
+        <h2 id="modal-sobre-title" class="modal-title">Sobre o Projeto</h2>
+        <button type="button" class="modal-close" data-modal-close aria-label="Fechar janela Sobre">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </header>
+      <div class="modal-body">
+        <section class="modal-section">
+          <h3>Finalidade Pedagógica</h3>
+          <p>
+            Esta landing page foi desenvolvida como atividade prática da disciplina de
+            <strong>Programação 2</strong> (Desenvolvimento Web) para a turma do
+            <strong>2º Período</strong> do curso de <strong>Bacharelado em Sistemas de Informação</strong>
+            da <strong>Universidade do Estado de Minas Gerais (UEMG) — Unidade Acadêmica de Carangola</strong>.
+          </p>
+          <p>
+            O objetivo pedagógico é consolidar os fundamentos do desenvolvimento front-end utilizando
+            exclusivamente HTML5 semântico, CSS3 responsivo e JavaScript Vanilla, com consumo assíncrono
+            de base JSON local (<code>./data/ceps.json</code>) referente ao município de
+            <strong>Passos — MG</strong>.
+          </p>
+        </section>
+
+        <section class="modal-section">
+          <h3>Equipe de Desenvolvimento</h3>
+          <ul class="team-list">
+            <li>
+              <a href="https://github.com/davidvilete" target="_blank" rel="noopener noreferrer">
+                Davi Vilete
+              </a>
+              <span class="team-role">— Equipe de Desenvolvimento</span>
+            </li>
+            <li>
+              <strong>Victor Silva Granja</strong>
+              <span class="team-role">— Equipe de Desenvolvimento</span>
+            </li>
+            <li>
+              <strong>Maxmiller Pereira da Mota</strong>
+              <span class="team-role">— Equipe de Desenvolvimento</span>
+            </li>
+          </ul>
+        </section>
+
+        <section class="modal-section modal-transparency">
+          <h3>Nota de Transparência sobre o Uso de Inteligência Artificial</h3>
+          <p>
+            Em consonância com os princípios de integridade acadêmica e transparência tecnológica,
+            declara-se que ferramentas de Inteligência Artificial generativa <strong>foram utilizadas</strong>
+            durante o desenvolvimento deste projeto. Elas foram aplicadas como suporte na estruturação
+            do código HTML5 semântico, na revisão sintática e de responsividade do CSS3, bem como na
+            implementação e depuração da lógica de busca reativa, acessibilidade e higienização da base
+            JSON em JavaScript, sendo a definição de requisitos, validação dos dados de Passos (MG) e
+            auditoria final conduzidas e verificadas pelos membros da equipe.
+          </p>
+        </section>
+      </div>
+      <footer class="modal-footer">
+        <button type="button" class="btn-secondary" data-modal-close>Fechar</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Modal 2: Termos de Uso -->
+  <div
+    id="modal-termos"
+    class="modal-overlay"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modal-termos-title"
+    hidden
+  >
+    <div class="modal-dialog">
+      <header class="modal-header">
+        <h2 id="modal-termos-title" class="modal-title">Termos de Uso</h2>
+        <button type="button" class="modal-close" data-modal-close aria-label="Fechar janela Termos de Uso">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </header>
+      <div class="modal-body">
+        <ol class="legal-list">
+          <li>
+            <strong>Finalidade Acadêmica:</strong> Esta aplicação web possui finalidade exclusivamente
+            didática e pedagógica, vinculada às atividades formativas da UEMG Unidade Carangola.
+          </li>
+          <li>
+            <strong>Natureza dos Dados:</strong> As informações de logradouros e Códigos de
+            Endereçamento Postal (CEP) foram extraídas de bases públicas (ViaCEP) e são apresentadas
+            em caráter meramente informativo, sem garantias de atualização cadastral em tempo real.
+          </li>
+          <li>
+            <strong>Isenção de Responsabilidade:</strong> Os autores e a instituição não se
+            responsabilizam por eventuais divergências cadastrais perante a Empresa Brasileira de
+            Correios e Telégrafos ou por utilizações comerciais indevidas desta plataforma.
+          </li>
+        </ol>
+      </div>
+      <footer class="modal-footer">
+        <button type="button" class="btn-secondary" data-modal-close>Entendi</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Modal 3: Política de Privacidade -->
+  <div
+    id="modal-privacidade"
+    class="modal-overlay"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modal-privacidade-title"
+    hidden
+  >
+    <div class="modal-dialog">
+      <header class="modal-header">
+        <h2 id="modal-privacidade-title" class="modal-title">Política de Privacidade</h2>
+        <button type="button" class="modal-close" data-modal-close aria-label="Fechar janela Política de Privacidade">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </header>
+      <div class="modal-body">
+        <ol class="legal-list">
+          <li>
+            <strong>Não Coleta de Dados Pessoais:</strong> Esta landing page não coleta, não solicita,
+            não processa e não armazena quaisquer dados de identificação pessoal, cookies de
+            rastreamento ou dados sensíveis dos visitantes.
+          </li>
+          <li>
+            <strong>Execução Local:</strong> As consultas aos logradouros e CEPs são filtradas
+            localmente na memória do navegador do usuário a partir de um arquivo estático (JSON),
+            inexistindo comunicação de telemetria com servidores de rastreamento externos.
+          </li>
+          <li>
+            <strong>Conformidade:</strong> Esta aplicação segue os princípios fundamentais da Lei
+            Geral de Proteção de Dados Pessoais (LGPD — Lei Federal nº 13.709/2018), pautando-se na
+            minimização absoluta de dados e na transparência.
+          </li>
+        </ol>
+      </div>
+      <footer class="modal-footer">
+        <button type="button" class="btn-secondary" data-modal-close>Fechar</button>
+      </footer>
+    </div>
+  </div>
+
+  <script src="./js/app.js" defer></script>
+</body>
+</html>
