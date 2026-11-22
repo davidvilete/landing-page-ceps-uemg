@@ -3,28 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Landing page interativa para consulta local de CEPs e logradouros de Passos, MG. Projeto acadêmico do curso de Sistemas de Informação da UEMG — Unidade Acadêmica de Carangola.">
-  <title>Consulta de CEPs — Passos, MG | Sistemas de Informação UEMG Carangola</title>
+  <meta name="description" content="Consulta de CEPs e logradouros de Passos, MG. Projeto da disciplina de Programação 2 — Sistemas de Informação, UEMG Carangola.">
+  <title>Consulta de CEPs — Passos, MG | UEMG Carangola</title>
   <link rel="icon" type="image/png" href="./assets/logo-si.png">
   <link rel="stylesheet" href="./css/styles.css">
 </head>
 <body>
-  <a class="skip-link" href="#busca-cep">Pular para a busca de CEPs</a>
+  <a class="skip-link" href="#busca-cep">Ir para a busca</a>
 
-  <!-- 3.1. Cabeçalho (Header) -->
-  <header class="site-header" role="banner">
+  <!-- Cabeçalho -->
+  <header class="site-header">
     <div class="container header-inner">
-      <a href="#topo" class="brand" aria-label="Início — Consulta de CEPs de Passos, MG — Sistemas de Informação UEMG Carangola">
+      <a href="#topo" class="brand" aria-label="Início — Consulta de CEPs de Passos, MG">
         <img
           src="./assets/logo-si.png"
-          alt="Logotipo do curso de Sistemas de Informação da UEMG Carangola"
+          alt="Logo do curso de Sistemas de Informação da UEMG Carangola"
           class="brand-logo"
-          width="56"
-          height="56"
+          width="52"
+          height="52"
         >
         <div class="brand-text">
           <span class="brand-title">Sistemas de Informação</span>
-          <span class="brand-subtitle">UEMG — Unidade Acadêmica de Carangola</span>
+          <span class="brand-subtitle">UEMG — Unidade Carangola</span>
         </div>
       </a>
 
@@ -33,7 +33,7 @@
           <li><a href="#busca-cep" class="nav-link">Consultar CEP</a></li>
           <li>
             <button type="button" class="nav-link nav-button" data-modal-target="modal-sobre">
-              Sobre o Projeto
+              Sobre
             </button>
           </li>
         </ul>
@@ -41,22 +41,19 @@
     </div>
   </header>
 
-  <!-- 3.2. Seção de Destaque (Hero) -->
+  <!-- Destaque principal -->
   <section id="topo" class="hero" aria-labelledby="hero-heading">
     <div class="hero-overlay" aria-hidden="true"></div>
     <div class="container hero-content">
-      <p class="hero-badge">
-        <span class="hero-badge-dot" aria-hidden="true"></span>
-        Município Atendido: Passos — Minas Gerais
-      </p>
+      <p class="hero-location">Passos · Minas Gerais</p>
 
       <h1 id="hero-heading" class="hero-title">
-        Consulta Rápida de CEPs de <span>Passos, MG</span>
+        Consulta de CEPs de Passos, MG
       </h1>
 
       <p class="hero-description">
-        Encontre instantaneamente o Código de Endereçamento Postal de ruas, avenidas e praças
-        de Passos com busca reativa local, sem rastreamento e 100% em tecnologias web puras.
+        Pesquise ruas, avenidas, praças, travessas e bairros de Passos para encontrar o CEP
+        rapidinho, direto no navegador.
       </p>
 
       <div class="hero-actions">
@@ -65,46 +62,46 @@
             <circle cx="11" cy="11" r="8"></circle>
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
-          Iniciar Consulta
+          Buscar endereço
         </a>
       </div>
 
-      <dl class="hero-stats" aria-label="Resumo da base local de logradouros">
+      <dl class="hero-stats" aria-label="Resumo da base de endereços">
         <div class="stat-item">
           <dt>Logradouros</dt>
           <dd id="stat-total">--</dd>
+        </div>
+        <div class="stat-item">
+          <dt>Bairros</dt>
+          <dd id="stat-bairros">--</dd>
         </div>
         <div class="stat-item">
           <dt>Ruas</dt>
           <dd id="stat-ruas">--</dd>
         </div>
         <div class="stat-item">
-          <dt>Avenidas</dt>
-          <dd id="stat-avenidas">--</dd>
-        </div>
-        <div class="stat-item">
-          <dt>Praças</dt>
-          <dd id="stat-pracas">--</dd>
+          <dt>Avenidas e Praças</dt>
+          <dd id="stat-outros">--</dd>
         </div>
       </dl>
     </div>
   </section>
 
-  <!-- 3.3. Área Central de Busca e Exibição de Resultados (Main) -->
+  <!-- Busca e exibição do resultado -->
   <main id="busca-cep" class="main-content">
     <div class="container">
       <section class="search-section" aria-labelledby="search-heading">
         <div class="section-header">
-          <h2 id="search-heading" class="section-title">Pesquisar Logradouro em Passos</h2>
+          <h2 id="search-heading" class="section-title">Encontre o CEP pelo logradouro</h2>
           <p class="section-subtitle">
-            Digite ao menos <strong>3 caracteres</strong> do nome da rua, avenida ou praça para exibir as sugestões.
+            Digite a partir de <strong>3 caracteres</strong> do nome da rua, avenida, praça ou bairro.
           </p>
         </div>
 
         <div class="search-card">
           <form class="search-form" id="search-form" autocomplete="off" novalidate>
             <label for="logradouro-input" class="search-label">
-              Nome do logradouro
+              Logradouro ou bairro em Passos
             </label>
 
             <div class="combobox-wrapper" id="combobox-wrapper">
@@ -121,7 +118,7 @@
                   id="logradouro-input"
                   name="logradouro"
                   class="search-input"
-                  placeholder="Ex.: Avenida Arouca, Praça Bruxelas, Rua Acre..."
+                  placeholder="Ex.: Avenida Arouca, Avelino Maia, Praça Geraldo, Centro..."
                   aria-autocomplete="list"
                   aria-expanded="false"
                   aria-controls="suggestions-list"
@@ -135,7 +132,7 @@
                   type="button"
                   id="clear-search-btn"
                   class="clear-btn"
-                  aria-label="Limpar busca"
+                  aria-label="Limpar campo de busca"
                   hidden
                 >
                   <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -145,7 +142,6 @@
                 </button>
               </div>
 
-              <!-- Menu de Sugestões (Dropdown / Autocomplete) -->
               <ul
                 id="suggestions-list"
                 class="suggestions-list"
@@ -157,26 +153,25 @@
 
             <div class="search-meta">
               <p id="search-hint" class="search-hint" role="status" aria-live="polite">
-                Carregando base local de CEPs de Passos, MG...
+                Carregando endereços de Passos...
               </p>
             </div>
           </form>
 
-          <div class="quick-examples" aria-label="Exemplos rápidos de busca">
-            <span class="quick-examples-label">Sugestões rápidas:</span>
+          <div class="quick-examples" aria-label="Exemplos de busca">
+            <span class="quick-examples-label">Exemplos:</span>
             <button type="button" class="example-chip" data-example="Avenida Arouca">Avenida Arouca</button>
-            <button type="button" class="example-chip" data-example="Avenida Brasil">Avenida Brasil</button>
-            <button type="button" class="example-chip" data-example="Praça Bruxelas">Praça Bruxelas</button>
-            <button type="button" class="example-chip" data-example="Rua Acre">Rua Acre</button>
+            <button type="button" class="example-chip" data-example="Avelino Maia">Avelino Maia</button>
+            <button type="button" class="example-chip" data-example="Praça Geraldo">Praça Geraldo</button>
+            <button type="button" class="example-chip" data-example="Centro">Bairro Centro</button>
           </div>
         </div>
       </section>
 
-      <!-- Área de Apresentação de Dados & Destaque ao CEP -->
+      <!-- Resultado selecionado -->
       <section class="result-section" aria-labelledby="result-heading" aria-live="polite">
-        <h2 id="result-heading" class="sr-only">Resultado da consulta de CEP</h2>
+        <h2 id="result-heading" class="sr-only">Resultado da consulta</h2>
 
-        <!-- Estado Inicial (antes de selecionar um logradouro) -->
         <div id="result-empty" class="result-placeholder">
           <div class="placeholder-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
@@ -184,14 +179,12 @@
               <circle cx="12" cy="10" r="3"></circle>
             </svg>
           </div>
-          <h3>Nenhum logradouro selecionado</h3>
+          <h3>Nenhum endereço selecionado</h3>
           <p>
-            Use o campo de busca acima, digite pelo menos 3 caracteres e selecione um dos
-            logradouros sugeridos para visualizar os dados completos e o CEP em destaque.
+            Escolha uma opção na lista de sugestões acima para exibir o CEP em destaque e os dados completos do endereço.
           </p>
         </div>
 
-        <!-- Card de Resultado Completo -->
         <article id="result-card" class="result-card" hidden>
           <header class="result-card-header">
             <div class="result-type-row">
@@ -201,10 +194,9 @@
             <h3 id="result-logradouro" class="result-logradouro">—</h3>
           </header>
 
-          <!-- Destaque Absoluto ao CEP -->
           <div class="cep-spotlight">
             <div class="cep-spotlight-info">
-              <span class="cep-spotlight-label">Código de Endereçamento Postal (CEP)</span>
+              <span class="cep-spotlight-label">CEP</span>
               <p id="result-cep" class="cep-spotlight-value">00000-000</p>
             </div>
             <button type="button" id="copy-cep-btn" class="btn-copy">
@@ -216,7 +208,6 @@
             </button>
           </div>
 
-          <!-- Detalhes Estruturados do Logradouro -->
           <dl class="result-details">
             <div class="detail-item">
               <dt>Logradouro</dt>
@@ -224,7 +215,7 @@
             </div>
 
             <div class="detail-item" id="detail-complemento-row" hidden>
-              <dt>Complemento / Trecho</dt>
+              <dt>Complemento</dt>
               <dd id="detail-complemento">—</dd>
             </div>
 
@@ -250,78 +241,45 @@
           </dl>
         </article>
       </section>
-
-      <!-- Seção Informativa Complementar -->
-      <section class="info-section" aria-labelledby="info-heading">
-        <h2 id="info-heading" class="section-title">Como funciona a consulta local</h2>
-        <div class="info-grid">
-          <article class="info-card">
-            <div class="info-icon" aria-hidden="true">01</div>
-            <h3>Base JSON Consolidada</h3>
-            <p>
-              Dados reais de ruas, avenidas e praças de Passos (MG) extraídos da API pública ViaCEP,
-              higienizados sem duplicidades e carregados localmente via <code>fetch()</code>.
-            </p>
-          </article>
-
-          <article class="info-card">
-            <div class="info-icon" aria-hidden="true">02</div>
-            <h3>Autocomplete Inteligente</h3>
-            <p>
-              Filtro dinâmico ativado a partir do 3º caractere digitado, insensível a acentos e
-              maiúsculas, com navegação completa por mouse e teclado.
-            </p>
-          </article>
-
-          <article class="info-card">
-            <div class="info-icon" aria-hidden="true">03</div>
-            <h3>Privacidade Total</h3>
-            <p>
-              Todo o processamento ocorre estritamente na memória do navegador, sem envio de dados
-              a servidores externos, sem cookies e sem telemetria.
-            </p>
-          </article>
-        </div>
-      </section>
     </div>
   </main>
 
-  <!-- 3.4. Rodapé (Footer) -->
-  <footer class="site-footer" role="contentinfo">
+  <!-- Rodapé -->
+  <footer class="site-footer">
     <div class="container footer-grid">
       <div class="footer-logos">
         <div class="footer-logo-group">
           <img
             src="./assets/logo-si.png"
-            alt="Logotipo do curso de Sistemas de Informação da UEMG Carangola"
+            alt="Logo de Sistemas de Informação da UEMG Carangola"
             class="footer-logo footer-logo-si"
-            width="64"
-            height="64"
+            width="60"
+            height="60"
           >
           <a
             href="https://www.uemg.br/carangola"
             target="_blank"
             rel="noopener noreferrer"
             class="footer-uemg-link"
-            aria-label="Acessar a página oficial da UEMG Unidade Acadêmica de Carangola (abre em nova aba)"
+            aria-label="Página oficial da UEMG Unidade Carangola (abre em nova aba)"
           >
             <img
               src="./assets/logo-uemg.png"
-              alt="Logotipo oficial da UEMG — Unidade Acadêmica de Carangola"
+              alt="Logo da UEMG — Unidade Acadêmica de Carangola"
               class="footer-logo footer-logo-uemg"
-              width="64"
-              height="64"
+              width="60"
+              height="60"
             >
           </a>
         </div>
 
         <div class="footer-institutional">
-          <p class="footer-course">Bacharelado em Sistemas de Informação — 2º Período</p>
-          <p class="footer-unit">Universidade do Estado de Minas Gerais (UEMG) — Unidade Carangola</p>
+          <p class="footer-course">Sistemas de Informação — 2º Período</p>
+          <p class="footer-unit">UEMG — Unidade Acadêmica de Carangola</p>
         </div>
       </div>
 
-      <nav class="footer-nav" aria-label="Informações legais e sobre o projeto">
+      <nav class="footer-nav" aria-label="Links institucionais">
         <ul class="footer-links">
           <li>
             <button type="button" class="footer-link-btn" data-modal-target="modal-sobre">
@@ -344,11 +302,9 @@
 
     <div class="footer-bottom">
       <div class="container footer-bottom-inner">
-        <p>
-          &copy; 2026 Atividade Prática — Programação 2 · Consulta de CEPs de Passos, MG.
-        </p>
+        <p>Programação 2 · Consulta de CEPs de Passos, MG</p>
         <p class="footer-credits">
-          Dados: ViaCEP · Foto de Passos:
+          Base: ViaCEP · Foto:
           <a
             href="https://commons.wikimedia.org/wiki/File:Passos_-_Regi%C3%A3o_central_de_Passos,_com_Pra%C3%A7a_da_Matriz_(no_centro).jpg"
             target="_blank"
@@ -359,11 +315,7 @@
     </div>
   </footer>
 
-  <!-- =========================================================
-       JANELAS FLUTUANTES (MODAIS ACESSÍVEIS)
-       ========================================================= -->
-
-  <!-- Modal 1: Sobre -->
+  <!-- Modais -->
   <div
     id="modal-sobre"
     class="modal-overlay"
@@ -384,15 +336,13 @@
           <h3>Finalidade Pedagógica</h3>
           <p>
             Esta landing page foi desenvolvida como atividade prática da disciplina de
-            <strong>Programação 2</strong> (Desenvolvimento Web) para a turma do
-            <strong>2º Período</strong> do curso de <strong>Bacharelado em Sistemas de Informação</strong>
-            da <strong>Universidade do Estado de Minas Gerais (UEMG) — Unidade Acadêmica de Carangola</strong>.
+            <strong>Programação 2</strong> para a turma do <strong>2º Período</strong> do curso de
+            <strong>Bacharelado em Sistemas de Informação</strong> da
+            <strong>Universidade do Estado de Minas Gerais (UEMG) — Unidade Acadêmica de Carangola</strong>.
           </p>
           <p>
-            O objetivo pedagógico é consolidar os fundamentos do desenvolvimento front-end utilizando
-            exclusivamente HTML5 semântico, CSS3 responsivo e JavaScript Vanilla, com consumo assíncrono
-            de base JSON local (<code>./data/ceps.json</code>) referente ao município de
-            <strong>Passos — MG</strong>.
+            O projeto trabalha HTML5 semântico, CSS3 responsivo e JavaScript puro com leitura local
+            de dados em JSON (<code>./data/ceps.json</code>) dos logradouros de <strong>Passos — MG</strong>.
           </p>
         </section>
 
@@ -403,29 +353,28 @@
               <a href="https://github.com/davidvilete" target="_blank" rel="noopener noreferrer">
                 Davi Vilete
               </a>
-              <span class="team-role">— Equipe de Desenvolvimento</span>
             </li>
             <li>
-              <strong>Victor Silva Granja</strong>
-              <span class="team-role">— Equipe de Desenvolvimento</span>
+              <a href="https://github.com/Legolasoelfo" target="_blank" rel="noopener noreferrer">
+                Victor Silva Granja
+              </a>
             </li>
             <li>
-              <strong>Maxmiller Pereira da Mota</strong>
-              <span class="team-role">— Equipe de Desenvolvimento</span>
+              <a href="https://github.com/maxmiller-ux" target="_blank" rel="noopener noreferrer">
+                Maxmiller Pereira da Mota
+              </a>
             </li>
           </ul>
         </section>
 
         <section class="modal-section modal-transparency">
-          <h3>Nota de Transparência sobre o Uso de Inteligência Artificial</h3>
+          <h3>Nota de Transparência sobre o Uso de IA</h3>
           <p>
             Em consonância com os princípios de integridade acadêmica e transparência tecnológica,
             declara-se que ferramentas de Inteligência Artificial generativa <strong>foram utilizadas</strong>
-            durante o desenvolvimento deste projeto. Elas foram aplicadas como suporte na estruturação
-            do código HTML5 semântico, na revisão sintática e de responsividade do CSS3, bem como na
-            implementação e depuração da lógica de busca reativa, acessibilidade e higienização da base
-            JSON em JavaScript, sendo a definição de requisitos, validação dos dados de Passos (MG) e
-            auditoria final conduzidas e verificadas pelos membros da equipe.
+            como apoio durante o desenvolvimento deste projeto, auxiliando na organização do código
+            HTML/CSS, na depuração da busca em JavaScript e na consolidação da base JSON, sendo toda
+            a revisão, os testes e a validação final realizados pelos integrantes da equipe.
           </p>
         </section>
       </div>
@@ -435,7 +384,6 @@
     </div>
   </div>
 
-  <!-- Modal 2: Termos de Uso -->
   <div
     id="modal-termos"
     class="modal-overlay"
@@ -470,12 +418,11 @@
         </ol>
       </div>
       <footer class="modal-footer">
-        <button type="button" class="btn-secondary" data-modal-close>Entendi</button>
+        <button type="button" class="btn-secondary" data-modal-close>Fechar</button>
       </footer>
     </div>
   </div>
 
-  <!-- Modal 3: Política de Privacidade -->
   <div
     id="modal-privacidade"
     class="modal-overlay"

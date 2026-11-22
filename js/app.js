@@ -1,36 +1,30 @@
-/**
- * Consulta de CEPs — Passos, MG
- * Curso de Bacharelado em Sistemas de Informação — UEMG Unidade Carangola
- * JavaScript Vanilla (ES6+, sem bibliotecas ou frameworks)
- */
-(function () {
+// Lógica da busca de CEPs (Passos, MG) e dos modais
+
+(() => {
   "use strict";
 
   const DATA_URL = "./data/ceps.json";
-  const MIN_SEARCH_CHARS = 3;
+  const MIN_CHARS = 3;
+  const MAX_SUGGESTIONS = 30;
 
-  /** @type {Array<Object>} */
-  let cepsData = [];
-  /** @type {Array<Object>} */
-  let currentMatches = [];
-  let activeIndex = -1;
-  let dataLoaded = false;
+  let ceps = [];
+  let resultadosAtuais = [];
+  let indiceAtivo = -1;
+  let baseCarregada = false;
 
-  // Elementos da busca e estatísticas
   const searchForm = document.getElementById("search-form");
   const searchInput = document.getElementById("logradouro-input");
-  const clearSearchBtn = document.getElementById("clear-search-btn");
+  const clearBtn = document.getElementById("clear-search-btn");
   const comboboxWrapper = document.getElementById("combobox-wrapper");
   const suggestionsList = document.getElementById("suggestions-list");
   const searchHint = document.getElementById("search-hint");
   const exampleChips = document.querySelectorAll(".example-chip");
 
   const statTotal = document.getElementById("stat-total");
+  const statBairros = document.getElementById("stat-bairros");
   const statRuas = document.getElementById("stat-ruas");
-  const statAvenidas = document.getElementById("stat-avenidas");
-  const statPracas = document.getElementById("stat-pracas");
+  const statOutros = document.getElementById("stat-outros");
 
-  // Elementos da exibição de resultado
   const resultEmpty = document.getElementById("result-empty");
   const resultCard = document.getElementById("result-card");
   const resultBadge = document.getElementById("result-badge");
@@ -47,340 +41,316 @@
   const detailDdd = document.getElementById("detail-ddd");
   const detailIbge = document.getElementById("detail-ibge");
 
-  // Estado dos modais
-  let activeModal = null;
-  let lastFocusedTrigger = null;
-  let copyFeedbackTimer = null;
+  let modalAberto = null;
+  let elementoAnterior = null;
+  let timerCopia = null;
 
-  /**
-   * Normaliza texto removendo acentos e convertendo para minúsculas
-   * para comparações consistentes em português.
-   * @param {string} value
-   * @returns {string}
-   */
-  function normalizeText(value) {
-    return String(value || "")
+  // Remove acentos e normaliza maiúsculas para facilitar a busca
+  function normalizar(texto) {
+    return String(texto || "")
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .toLowerCase()
       .trim();
   }
 
-  /**
-   * Identifica o tipo do logradouro para exibição no selo visual.
-   * @param {string} logradouro
-   * @returns {string}
-   */
-  function getStreetType(logradouro) {
-    const normalized = normalizeText(logradouro);
-    if (normalized.startsWith("avenida")) return "Avenida";
-    if (normalized.startsWith("praca")) return "Praça";
-    if (normalized.startsWith("rua")) return "Rua";
+  function identificarTipo(logradouro) {
+    const inicio = normalizar(logradouro);
+    if (inicio.startsWith("rua")) return "Rua";
+    if (inicio.startsWith("avenida")) return "Avenida";
+    if (inicio.startsWith("praca")) return "Praça";
+    if (inicio.startsWith("travessa")) return "Travessa";
+    if (inicio.startsWith("alameda")) return "Alameda";
+    if (inicio.startsWith("estrada")) return "Estrada";
+    if (inicio.startsWith("rodovia")) return "Rodovia";
+    if (inicio.startsWith("beco")) return "Beco";
     return "Logradouro";
   }
 
-  /**
-   * Cria um DocumentFragment com o trecho pesquisado destacado em <mark>
-   * de forma segura (sem innerHTML), respeitando acentuação original.
-   * @param {string} originalText
-   * @param {string} query
-   * @returns {DocumentFragment}
-   */
-  function createHighlightedFragment(originalText, query) {
+  // Destaca o trecho buscado no texto sem usar innerHTML
+  function destacarTrecho(textoOriginal, termo) {
     const fragment = document.createDocumentFragment();
-    const normQuery = normalizeText(query);
+    const termoNorm = normalizar(termo);
 
-    if (!normQuery) {
-      fragment.appendChild(document.createTextNode(originalText));
+    if (!termoNorm) {
+      fragment.appendChild(document.createTextNode(textoOriginal));
       return fragment;
     }
 
-    // Mapeia cada caractere normalizado de volta para seu índice na string original
-    const chars = Array.from(originalText);
-    let normalizedFull = "";
-    const indexMap = [];
+    const chars = Array.from(textoOriginal);
+    let textoNorm = "";
+    const mapaIndices = [];
 
-    for (let i = 0; i < chars.length; i += 1) {
-      const normChar = chars[i]
+    chars.forEach((ch, idx) => {
+      const chNorm = ch
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
         .toLowerCase();
-      for (let j = 0; j < normChar.length; j += 1) {
-        normalizedFull += normChar[j];
-        indexMap.push(i);
+      for (let j = 0; j < chNorm.length; j += 1) {
+        textoNorm += chNorm[j];
+        mapaIndices.push(idx);
       }
-    }
+    });
 
-    const matchStart = normalizedFull.indexOf(normQuery);
-    if (matchStart === -1) {
-      fragment.appendChild(document.createTextNode(originalText));
+    const pos = textoNorm.indexOf(termoNorm);
+    if (pos === -1) {
+      fragment.appendChild(document.createTextNode(textoOriginal));
       return fragment;
     }
 
-    const origStart = indexMap[matchStart];
-    const origEnd = indexMap[matchStart + normQuery.length - 1] + 1;
+    const ini = mapaIndices[pos];
+    const fim = mapaIndices[pos + termoNorm.length - 1] + 1;
 
-    const before = chars.slice(0, origStart).join("");
-    const match = chars.slice(origStart, origEnd).join("");
-    const after = chars.slice(origEnd).join("");
+    const antes = chars.slice(0, ini).join("");
+    const trecho = chars.slice(ini, fim).join("");
+    const depois = chars.slice(fim).join("");
 
-    if (before) fragment.appendChild(document.createTextNode(before));
+    if (antes) fragment.appendChild(document.createTextNode(antes));
 
     const mark = document.createElement("mark");
-    mark.textContent = match;
+    mark.textContent = trecho;
     fragment.appendChild(mark);
 
-    if (after) fragment.appendChild(document.createTextNode(after));
+    if (depois) fragment.appendChild(document.createTextNode(depois));
 
     return fragment;
   }
 
-  /**
-   * Carrega a base local de CEPs via Fetch API e atualiza as estatísticas do Hero.
-   */
-  async function loadCepsData() {
+  function atualizarAviso(mensagem, erro = false) {
+    searchHint.textContent = mensagem;
+    searchHint.classList.toggle("is-error", erro);
+  }
+
+  function atualizarContadores() {
+    let ruas = 0;
+    let avenidasPracas = 0;
+    const bairrosUnicos = new Set();
+
+    ceps.forEach((item) => {
+      const tipo = identificarTipo(item.logradouro);
+      if (tipo === "Rua") ruas += 1;
+      if (tipo === "Avenida" || tipo === "Praça") avenidasPracas += 1;
+      if (item.bairro) bairrosUnicos.add(item.bairro);
+    });
+
+    const formatador = new Intl.NumberFormat("pt-BR");
+    if (statTotal) statTotal.textContent = formatador.format(ceps.length);
+    if (statBairros) statBairros.textContent = formatador.format(bairrosUnicos.size);
+    if (statRuas) statRuas.textContent = formatador.format(ruas);
+    if (statOutros) statOutros.textContent = formatador.format(avenidasPracas);
+  }
+
+  async function carregarBase() {
     try {
-      const response = await fetch(DATA_URL, {
+      const resposta = await fetch(DATA_URL, {
         headers: { Accept: "application/json" }
       });
 
-      if (!response.ok) {
-        throw new Error("HTTP " + response.status);
+      if (!resposta.ok) {
+        throw new Error(`Erro HTTP ${resposta.status}`);
       }
 
-      const rawData = await response.json();
-      if (!Array.isArray(rawData)) {
-        throw new Error("Formato JSON inválido.");
+      const dados = await resposta.json();
+      if (!Array.isArray(dados)) {
+        throw new Error("O arquivo JSON não contém uma lista válida.");
       }
 
-      // Pré-indexação leve para busca reativa instantânea
-      cepsData = rawData.map(function (item) {
-        return {
-          cep: item.cep || "",
-          logradouro: item.logradouro || "",
-          complemento: item.complemento || "",
-          bairro: item.bairro || "",
-          localidade: item.localidade || "Passos",
-          uf: item.uf || "MG",
-          estado: item.estado || "Minas Gerais",
-          ddd: item.ddd || "35",
-          ibge: item.ibge || "3147907",
-          _searchLogradouro: normalizeText(item.logradouro)
-        };
-      });
+      ceps = dados.map((item) => ({
+        cep: item.cep || "",
+        logradouro: item.logradouro || "",
+        complemento: item.complemento || "",
+        bairro: item.bairro || "",
+        localidade: item.localidade || "Passos",
+        uf: item.uf || "MG",
+        estado: item.estado || "Minas Gerais",
+        ddd: item.ddd || "35",
+        ibge: item.ibge || "3147907",
+        buscaLogradouro: normalizar(item.logradouro),
+        buscaBairro: normalizar(item.bairro)
+      }));
 
-      dataLoaded = true;
-      updateHeroStats();
-      setHint(
-        "Base local carregada com " +
-          cepsData.length +
-          " logradouros de Passos, MG. Digite ao menos 3 caracteres para pesquisar.",
-        false
+      baseCarregada = true;
+      atualizarContadores();
+      atualizarAviso(
+        `Base pronta com ${ceps.length.toLocaleString("pt-BR")} endereços de Passos. Digite pelo menos 3 caracteres para buscar.`
       );
-    } catch (error) {
-      dataLoaded = false;
-      console.error("Erro ao carregar ./data/ceps.json:", error);
-      setHint(
-        "Não foi possível carregar ./data/ceps.json. Execute o projeto por um servidor local (ex.: Live Server) ou acesse a versão publicada.",
+    } catch (err) {
+      baseCarregada = false;
+      console.error("Falha ao carregar ./data/ceps.json:", err);
+      atualizarAviso(
+        "Não foi possível carregar ./data/ceps.json. Abra o projeto usando um servidor local (como Live Server) ou pela versão publicada.",
         true
       );
     }
   }
 
-  /**
-   * Atualiza os contadores dinâmicos da seção Hero com base no JSON carregado.
-   */
-  function updateHeroStats() {
-    let ruas = 0;
-    let avenidas = 0;
-    let pracas = 0;
+  // Prioriza correspondências no logradouro e também aceita busca por bairro
+  function filtrarEnderecos(termo) {
+    const query = normalizar(termo);
+    const encontrados = [];
 
-    for (let i = 0; i < cepsData.length; i += 1) {
-      const type = getStreetType(cepsData[i].logradouro);
-      if (type === "Rua") ruas += 1;
-      else if (type === "Avenida") avenidas += 1;
-      else if (type === "Praça") pracas += 1;
-    }
+    for (let i = 0; i < ceps.length; i += 1) {
+      const item = ceps[i];
+      const idxRua = item.buscaLogradouro.indexOf(query);
+      const idxBairro = item.buscaBairro.indexOf(query);
 
-    if (statTotal) statTotal.textContent = String(cepsData.length);
-    if (statRuas) statRuas.textContent = String(ruas);
-    if (statAvenidas) statAvenidas.textContent = String(avenidas);
-    if (statPracas) statPracas.textContent = String(pracas);
-  }
+      if (idxRua === -1 && idxBairro === -1) continue;
 
-  /**
-   * Atualiza a mensagem de status/orientação abaixo do campo de busca.
-   * @param {string} message
-   * @param {boolean} isError
-   */
-  function setHint(message, isError) {
-    searchHint.textContent = message;
-    searchHint.classList.toggle("is-error", Boolean(isError));
-  }
-
-  /**
-   * Filtra a base de logradouros e ordena por relevância.
-   * @param {string} query
-   * @returns {Array<Object>}
-   */
-  function filterLogradouros(query) {
-    const normalizedQuery = normalizeText(query);
-    const matches = [];
-
-    for (let i = 0; i < cepsData.length; i += 1) {
-      const item = cepsData[i];
-      const idx = item._searchLogradouro.indexOf(normalizedQuery);
-      if (idx !== -1) {
-        // Prioriza correspondências no início do nome ou início de palavra
-        let score = 2;
-        if (idx === 0) {
-          score = 0;
-        } else if (item._searchLogradouro.charAt(idx - 1) === " ") {
-          score = 1;
-        }
-        matches.push({ item: item, score: score });
+      let peso = 4;
+      if (idxRua === 0) {
+        peso = 0;
+      } else if (idxRua > 0 && item.buscaLogradouro[idxRua - 1] === " ") {
+        peso = 1;
+      } else if (idxRua > 0) {
+        peso = 2;
+      } else if (idxBairro === 0) {
+        peso = 3;
       }
+
+      encontrados.push({ item, peso });
     }
 
-    matches.sort(function (a, b) {
-      if (a.score !== b.score) return a.score - b.score;
+    encontrados.sort((a, b) => {
+      if (a.peso !== b.peso) return a.peso - b.peso;
       return a.item.logradouro.localeCompare(b.item.logradouro, "pt-BR");
     });
 
-    return matches.map(function (entry) {
-      return entry.item;
-    });
+    return encontrados.map((entry) => entry.item);
   }
 
-  /**
-   * Abre ou fecha o menu suspenso de sugestões.
-   * @param {boolean} open
-   */
-  function setDropdownOpen(open) {
-    suggestionsList.hidden = !open;
-    searchInput.setAttribute("aria-expanded", open ? "true" : "false");
-    if (!open) {
-      activeIndex = -1;
+  function alternarDropdown(aberto) {
+    suggestionsList.hidden = !aberto;
+    searchInput.setAttribute("aria-expanded", aberto ? "true" : "false");
+    if (!aberto) {
+      indiceAtivo = -1;
       searchInput.removeAttribute("aria-activedescendant");
     }
   }
 
-  /**
-   * Renderiza a lista flutuante de sugestões do autocomplete.
-   * @param {Array<Object>} matches
-   * @param {string} query
-   */
-  function renderSuggestions(matches, query) {
+  function renderizarSugestoes(listaCompleta, termo) {
     suggestionsList.textContent = "";
-    currentMatches = matches;
-    activeIndex = -1;
+    const visiveis = listaCompleta.slice(0, MAX_SUGGESTIONS);
+    resultadosAtuais = visiveis;
+    indiceAtivo = -1;
     searchInput.removeAttribute("aria-activedescendant");
 
-    if (matches.length === 0) {
-      const emptyLi = document.createElement("li");
-      emptyLi.className = "suggestion-empty";
-      emptyLi.setAttribute("role", "option");
-      emptyLi.setAttribute("aria-disabled", "true");
-      emptyLi.textContent = 'Nenhum logradouro encontrado para "' + query.trim() + '".';
-      suggestionsList.appendChild(emptyLi);
-      setDropdownOpen(true);
-      setHint("Nenhuma correspondência encontrada na base local de Passos, MG.", false);
+    if (visiveis.length === 0) {
+      const vazio = document.createElement("li");
+      vazio.className = "suggestion-empty";
+      vazio.setAttribute("role", "option");
+      vazio.setAttribute("aria-disabled", "true");
+      vazio.textContent = `Nenhum endereço encontrado para "${termo.trim()}".`;
+      suggestionsList.appendChild(vazio);
+      alternarDropdown(true);
+      atualizarAviso("Nenhum logradouro ou bairro correspondente encontrado.");
       return;
     }
 
     const fragment = document.createDocumentFragment();
 
-    matches.forEach(function (item, index) {
+    visiveis.forEach((item, index) => {
       const li = document.createElement("li");
-      li.id = "suggestion-option-" + index;
+      li.id = `sugestao-${index}`;
       li.className = "suggestion-item";
       li.setAttribute("role", "option");
       li.setAttribute("aria-selected", "false");
-      li.dataset.index = String(index);
 
-      const mainDiv = document.createElement("div");
-      mainDiv.className = "suggestion-main";
+      const colunaTexto = document.createElement("div");
+      colunaTexto.className = "suggestion-main";
 
-      const streetSpan = document.createElement("span");
-      streetSpan.className = "suggestion-street";
-      streetSpan.appendChild(createHighlightedFragment(item.logradouro, query));
+      const nomeRua = document.createElement("span");
+      nomeRua.className = "suggestion-street";
+      nomeRua.appendChild(destacarTrecho(item.logradouro, termo));
 
-      const metaSpan = document.createElement("span");
-      metaSpan.className = "suggestion-meta";
-      const metaParts = [];
-      if (item.bairro) metaParts.push("Bairro " + item.bairro);
-      if (item.complemento) metaParts.push(item.complemento);
-      metaSpan.textContent = metaParts.join(" · ") || item.localidade + "/" + item.uf;
+      const detalhes = document.createElement("span");
+      detalhes.className = "suggestion-meta";
+      if (item.bairro) {
+        detalhes.appendChild(document.createTextNode("Bairro "));
+        detalhes.appendChild(destacarTrecho(item.bairro, termo));
+        if (item.complemento) {
+          detalhes.appendChild(document.createTextNode(` · ${item.complemento}`));
+        }
+      } else {
+        detalhes.textContent = item.complemento || `${item.localidade}/${item.uf}`;
+      }
 
-      mainDiv.appendChild(streetSpan);
-      mainDiv.appendChild(metaSpan);
+      colunaTexto.appendChild(nomeRua);
+      colunaTexto.appendChild(detalhes);
 
-      const cepSpan = document.createElement("span");
-      cepSpan.className = "suggestion-cep";
-      cepSpan.textContent = item.cep;
+      const cepBadge = document.createElement("span");
+      cepBadge.className = "suggestion-cep";
+      cepBadge.textContent = item.cep;
 
-      li.appendChild(mainDiv);
-      li.appendChild(cepSpan);
+      li.appendChild(colunaTexto);
+      li.appendChild(cepBadge);
 
-      // Usa mousedown para selecionar antes do evento blur do input
-      li.addEventListener("mousedown", function (event) {
+      li.addEventListener("mousedown", (event) => {
         event.preventDefault();
-        selectLogradouro(item);
+        selecionarEndereco(item);
       });
 
       fragment.appendChild(li);
     });
 
-    suggestionsList.appendChild(fragment);
-    setDropdownOpen(true);
+    if (listaCompleta.length > MAX_SUGGESTIONS) {
+      const avisoMais = document.createElement("li");
+      avisoMais.className = "suggestion-more";
+      avisoMais.setAttribute("role", "presentation");
+      avisoMais.textContent = `Mostrando ${MAX_SUGGESTIONS} de ${listaCompleta.length.toLocaleString("pt-BR")} resultados — continue digitando para filtrar.`;
+      fragment.appendChild(avisoMais);
+    }
 
-    const plural = matches.length === 1 ? "logradouro encontrado" : "logradouros encontrados";
-    setHint(
-      matches.length + " " + plural + ". Selecione uma opção na lista para ver o CEP em destaque.",
-      false
-    );
+    suggestionsList.appendChild(fragment);
+    alternarDropdown(true);
+
+    const textoQtd =
+      listaCompleta.length === 1
+        ? "1 endereço encontrado."
+        : `${listaCompleta.length.toLocaleString("pt-BR")} endereços encontrados.`;
+    atualizarAviso(`${textoQtd} Selecione uma opção para ver os detalhes.`);
   }
 
-  /**
-   * Atualiza o item destacado na navegação por teclado no dropdown.
-   * @param {number} newIndex
-   */
-  function updateActiveOption(newIndex) {
-    const items = suggestionsList.querySelectorAll(".suggestion-item");
-    if (items.length === 0) return;
+  function atualizarItemAtivo(novoIndice) {
+    const itens = suggestionsList.querySelectorAll(".suggestion-item");
+    if (itens.length === 0) return;
 
-    items.forEach(function (el) {
+    itens.forEach((el) => {
       el.classList.remove("is-active");
       el.setAttribute("aria-selected", "false");
     });
 
-    if (newIndex < 0) {
-      activeIndex = items.length - 1;
-    } else if (newIndex >= items.length) {
-      activeIndex = 0;
+    if (novoIndice < 0) {
+      indiceAtivo = itens.length - 1;
+    } else if (novoIndice >= itens.length) {
+      indiceAtivo = 0;
     } else {
-      activeIndex = newIndex;
+      indiceAtivo = novoIndice;
     }
 
-    const activeEl = items[activeIndex];
-    if (activeEl) {
-      activeEl.classList.add("is-active");
-      activeEl.setAttribute("aria-selected", "true");
-      searchInput.setAttribute("aria-activedescendant", activeEl.id);
-      activeEl.scrollIntoView({ block: "nearest" });
+    const ativo = itens[indiceAtivo];
+    if (ativo) {
+      ativo.classList.add("is-active");
+      ativo.setAttribute("aria-selected", "true");
+      searchInput.setAttribute("aria-activedescendant", ativo.id);
+      ativo.scrollIntoView({ block: "nearest" });
     }
   }
 
-  /**
-   * Exibe o card completo do logradouro selecionado com destaque absoluto ao CEP.
-   * @param {Object} item
-   */
-  function selectLogradouro(item) {
-    searchInput.value = item.logradouro;
-    clearSearchBtn.hidden = false;
-    setDropdownOpen(false);
+  function resetarBotaoCopiar() {
+    if (timerCopia) {
+      clearTimeout(timerCopia);
+      timerCopia = null;
+    }
+    copyCepBtn.classList.remove("is-copied");
+    copyCepLabel.textContent = "Copiar CEP";
+  }
 
-    resultBadge.textContent = getStreetType(item.logradouro);
+  function selecionarEndereco(item) {
+    searchInput.value = item.logradouro;
+    clearBtn.hidden = false;
+    alternarDropdown(false);
+
+    resultBadge.textContent = identificarTipo(item.logradouro);
     resultLogradouro.textContent = item.logradouro;
     resultCep.textContent = item.cep;
 
@@ -395,261 +365,212 @@
     }
 
     detailBairro.textContent = item.bairro || "Não informado";
-    detailLocalidade.textContent = item.localidade + " / " + item.uf + " (" + item.estado + ")";
-    detailDdd.textContent = "(" + item.ddd + ")";
+    detailLocalidade.textContent = `${item.localidade} / ${item.uf} (${item.estado})`;
+    detailDdd.textContent = `(${item.ddd})`;
     detailIbge.textContent = item.ibge;
 
-    resetCopyButton();
-
+    resetarBotaoCopiar();
     resultEmpty.hidden = true;
     resultCard.hidden = false;
 
-    setHint("Exibindo dados completos para " + item.logradouro + " — CEP " + item.cep + ".", false);
+    atualizarAviso(`Exibindo CEP de ${item.logradouro} (${item.cep}).`);
   }
 
-  /**
-   * Trata a digitação no campo de busca, respeitando o gatilho mínimo de 3 caracteres.
-   */
-  function handleSearchInput() {
-    const rawValue = searchInput.value;
-    const trimmedValue = rawValue.trim();
+  function aoDigitar() {
+    const valor = searchInput.value;
+    const limpo = valor.trim();
 
-    clearSearchBtn.hidden = rawValue.length === 0;
+    clearBtn.hidden = valor.length === 0;
+    if (!baseCarregada) return;
 
-    if (!dataLoaded) {
-      return;
-    }
-
-    // Regra obrigatória: o disparo do filtro só ocorre com 3 ou mais caracteres
-    if (trimmedValue.length === 0) {
-      currentMatches = [];
-      setDropdownOpen(false);
-      setHint(
-        "Base local carregada com " +
-          cepsData.length +
-          " logradouros de Passos, MG. Digite ao menos 3 caracteres para pesquisar.",
-        false
+    if (limpo.length === 0) {
+      resultadosAtuais = [];
+      alternarDropdown(false);
+      atualizarAviso(
+        `Base pronta com ${ceps.length.toLocaleString("pt-BR")} endereços de Passos. Digite pelo menos 3 caracteres para buscar.`
       );
       return;
     }
 
-    if (trimmedValue.length < MIN_SEARCH_CHARS) {
-      const remaining = MIN_SEARCH_CHARS - trimmedValue.length;
-      const charWord = remaining === 1 ? "caractere" : "caracteres";
-      currentMatches = [];
-      setDropdownOpen(false);
-      setHint(
-        "Digite mais " + remaining + " " + charWord + " para exibir as sugestões de logradouros.",
-        false
-      );
+    // O filtro só dispara a partir de 3 caracteres digitados
+    if (limpo.length < MIN_CHARS) {
+      const faltam = MIN_CHARS - limpo.length;
+      const unidade = faltam === 1 ? "caractere" : "caracteres";
+      resultadosAtuais = [];
+      alternarDropdown(false);
+      atualizarAviso(`Digite mais ${faltam} ${unidade} para ver as sugestões.`);
       return;
     }
 
-    const matches = filterLogradouros(trimmedValue);
-    renderSuggestions(matches, trimmedValue);
+    const resultados = filtrarEnderecos(limpo);
+    renderizarSugestoes(resultados, limpo);
   }
 
-  /**
-   * Restaura o botão de copiar CEP ao estado padrão.
-   */
-  function resetCopyButton() {
-    if (copyFeedbackTimer) {
-      clearTimeout(copyFeedbackTimer);
-      copyFeedbackTimer = null;
-    }
-    copyCepBtn.classList.remove("is-copied");
-    copyCepLabel.textContent = "Copiar CEP";
-  }
-
-  /**
-   * Copia o CEP exibido para a área de transferência com fallback seguro.
-   */
-  async function handleCopyCep() {
-    const cepValue = resultCep.textContent.trim();
-    if (!cepValue) return;
+  async function copiarCep() {
+    const cepTexto = resultCep.textContent.trim();
+    if (!cepTexto) return;
 
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(cepValue);
+        await navigator.clipboard.writeText(cepTexto);
       } else {
-        const tempInput = document.createElement("textarea");
-        tempInput.value = cepValue;
-        tempInput.setAttribute("readonly", "");
-        tempInput.style.position = "absolute";
-        tempInput.style.left = "-9999px";
-        document.body.appendChild(tempInput);
-        tempInput.select();
+        const temp = document.createElement("textarea");
+        temp.value = cepTexto;
+        temp.setAttribute("readonly", "");
+        temp.style.position = "absolute";
+        temp.style.left = "-9999px";
+        document.body.appendChild(temp);
+        temp.select();
         document.execCommand("copy");
-        document.body.removeChild(tempInput);
+        document.body.removeChild(temp);
       }
 
       copyCepBtn.classList.add("is-copied");
       copyCepLabel.textContent = "CEP copiado!";
-      if (copyFeedbackTimer) clearTimeout(copyFeedbackTimer);
-      copyFeedbackTimer = setTimeout(resetCopyButton, 2200);
+      if (timerCopia) clearTimeout(timerCopia);
+      timerCopia = setTimeout(resetarBotaoCopiar, 2000);
     } catch (err) {
-      console.error("Falha ao copiar CEP:", err);
+      console.error("Não foi possível copiar o CEP:", err);
     }
   }
 
-  /* ========================================================================
-     Gerenciamento de Janelas Flutuantes (Modais Acessíveis)
-     ======================================================================== */
-
-  function getFocusableElements(container) {
+  // Controle dos modais acessíveis
+  function elementosFocaveis(container) {
     return Array.from(
       container.querySelectorAll(
-        'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
       )
     );
   }
 
-  function openModal(modalId, triggerElement) {
-    const modal = document.getElementById(modalId);
+  function abrirModal(idModal, gatilho) {
+    const modal = document.getElementById(idModal);
     if (!modal) return;
 
-    if (activeModal) {
-      closeModal();
-    }
+    if (modalAberto) fecharModal();
 
-    lastFocusedTrigger = triggerElement || document.activeElement;
-    activeModal = modal;
+    elementoAnterior = gatilho || document.activeElement;
+    modalAberto = modal;
     modal.hidden = false;
     document.body.classList.add("modal-open");
 
-    const focusables = getFocusableElements(modal);
-    if (focusables.length > 0) {
-      focusables[0].focus();
-    }
+    const focaveis = elementosFocaveis(modal);
+    if (focaveis.length > 0) focaveis[0].focus();
   }
 
-  function closeModal() {
-    if (!activeModal) return;
+  function fecharModal() {
+    if (!modalAberto) return;
 
-    activeModal.hidden = true;
+    modalAberto.hidden = true;
     document.body.classList.remove("modal-open");
-    activeModal = null;
+    modalAberto = null;
 
-    if (lastFocusedTrigger && typeof lastFocusedTrigger.focus === "function") {
-      lastFocusedTrigger.focus();
+    if (elementoAnterior && typeof elementoAnterior.focus === "function") {
+      elementoAnterior.focus();
     }
-    lastFocusedTrigger = null;
+    elementoAnterior = null;
   }
 
-  function handleModalKeydown(event) {
-    if (!activeModal) return;
+  function tecladoModal(event) {
+    if (!modalAberto) return;
 
     if (event.key === "Escape") {
       event.preventDefault();
-      closeModal();
+      fecharModal();
       return;
     }
 
     if (event.key === "Tab") {
-      const focusables = getFocusableElements(activeModal);
-      if (focusables.length === 0) return;
+      const focaveis = elementosFocaveis(modalAberto);
+      if (focaveis.length === 0) return;
 
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
+      const primeiro = focaveis[0];
+      const ultimo = focaveis[focaveis.length - 1];
 
-      if (event.shiftKey && document.activeElement === first) {
+      if (event.shiftKey && document.activeElement === primeiro) {
         event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
+        ultimo.focus();
+      } else if (!event.shiftKey && document.activeElement === ultimo) {
         event.preventDefault();
-        first.focus();
+        primeiro.focus();
       }
     }
   }
 
-  /* ========================================================================
-     Registro de Eventos
-     ======================================================================== */
-
-  searchForm.addEventListener("submit", function (event) {
+  // Eventos
+  searchForm.addEventListener("submit", (event) => {
     event.preventDefault();
-    if (!suggestionsList.hidden && currentMatches.length > 0) {
-      const chosen = activeIndex >= 0 ? currentMatches[activeIndex] : currentMatches[0];
-      if (chosen) selectLogradouro(chosen);
+    if (!suggestionsList.hidden && resultadosAtuais.length > 0) {
+      const escolhido = indiceAtivo >= 0 ? resultadosAtuais[indiceAtivo] : resultadosAtuais[0];
+      if (escolhido) selecionarEndereco(escolhido);
     }
   });
 
-  searchInput.addEventListener("input", handleSearchInput);
+  searchInput.addEventListener("input", aoDigitar);
 
-  searchInput.addEventListener("keydown", function (event) {
+  searchInput.addEventListener("keydown", (event) => {
     if (suggestionsList.hidden) {
-      if (event.key === "ArrowDown" && searchInput.value.trim().length >= MIN_SEARCH_CHARS) {
-        handleSearchInput();
+      if (event.key === "ArrowDown" && searchInput.value.trim().length >= MIN_CHARS) {
+        aoDigitar();
       }
       return;
     }
 
     if (event.key === "ArrowDown") {
       event.preventDefault();
-      updateActiveOption(activeIndex + 1);
+      atualizarItemAtivo(indiceAtivo + 1);
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
-      updateActiveOption(activeIndex - 1);
-    } else if (event.key === "Enter") {
-      if (activeIndex >= 0 && currentMatches[activeIndex]) {
-        event.preventDefault();
-        selectLogradouro(currentMatches[activeIndex]);
-      }
+      atualizarItemAtivo(indiceAtivo - 1);
+    } else if (event.key === "Enter" && indiceAtivo >= 0 && resultadosAtuais[indiceAtivo]) {
+      event.preventDefault();
+      selecionarEndereco(resultadosAtuais[indiceAtivo]);
     } else if (event.key === "Escape") {
       event.preventDefault();
-      setDropdownOpen(false);
+      alternarDropdown(false);
     }
   });
 
-  clearSearchBtn.addEventListener("click", function () {
+  clearBtn.addEventListener("click", () => {
     searchInput.value = "";
-    clearSearchBtn.hidden = true;
-    currentMatches = [];
-    setDropdownOpen(false);
-    handleSearchInput();
+    clearBtn.hidden = true;
+    resultadosAtuais = [];
+    alternarDropdown(false);
+    aoDigitar();
     searchInput.focus();
   });
 
-  // Fecha o dropdown ao clicar fora do combobox
-  document.addEventListener("click", function (event) {
+  document.addEventListener("click", (event) => {
     if (!comboboxWrapper.contains(event.target)) {
-      setDropdownOpen(false);
+      alternarDropdown(false);
     }
   });
 
-  // Sugestões rápidas de demonstração
-  exampleChips.forEach(function (chip) {
-    chip.addEventListener("click", function () {
-      const exampleQuery = chip.dataset.example || "";
-      searchInput.value = exampleQuery;
+  exampleChips.forEach((chip) => {
+    chip.addEventListener("click", () => {
+      searchInput.value = chip.dataset.example || "";
       searchInput.focus();
-      handleSearchInput();
+      aoDigitar();
     });
   });
 
-  copyCepBtn.addEventListener("click", handleCopyCep);
+  copyCepBtn.addEventListener("click", copiarCep);
 
-  // Gatilhos de abertura e fechamento de modais
-  document.querySelectorAll("[data-modal-target]").forEach(function (trigger) {
-    trigger.addEventListener("click", function () {
-      openModal(trigger.dataset.modalTarget, trigger);
+  document.querySelectorAll("[data-modal-target]").forEach((btn) => {
+    btn.addEventListener("click", () => abrirModal(btn.dataset.modalTarget, btn));
+  });
+
+  document.querySelectorAll(".modal-overlay").forEach((overlay) => {
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay) fecharModal();
+    });
+
+    overlay.querySelectorAll("[data-modal-close]").forEach((btn) => {
+      btn.addEventListener("click", fecharModal);
     });
   });
 
-  document.querySelectorAll(".modal-overlay").forEach(function (overlay) {
-    overlay.addEventListener("click", function (event) {
-      if (event.target === overlay) {
-        closeModal();
-      }
-    });
+  document.addEventListener("keydown", tecladoModal);
 
-    overlay.querySelectorAll("[data-modal-close]").forEach(function (closeBtn) {
-      closeBtn.addEventListener("click", closeModal);
-    });
-  });
-
-  document.addEventListener("keydown", handleModalKeydown);
-
-  // Inicialização
-  loadCepsData();
+  carregarBase();
 })();
