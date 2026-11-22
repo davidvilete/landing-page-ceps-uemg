@@ -184,7 +184,7 @@
     }
   }
 
-  // Prioriza correspondências no logradouro e também aceita busca por bairro
+  // Ordena de A-Z priorizando ruas com nome completo (deixando códigos de 1 letra para busca exata)
   function filtrarEnderecos(termo) {
     const query = normalizar(termo);
     const encontrados = [];
@@ -196,15 +196,20 @@
 
       if (idxRua === -1 && idxBairro === -1) continue;
 
-      let peso = 4;
-      if (idxRua === 0) {
+      const ehLetraIsolada = /^(rua|avenida|praca|travessa)\s+[a-z0-9]$/.test(item.buscaLogradouro);
+      const buscaExata = item.buscaLogradouro === query;
+
+      let peso = 5;
+      if (buscaExata) {
         peso = 0;
+      } else if (idxRua === 0) {
+        peso = ehLetraIsolada ? 3.5 : 1;
       } else if (idxRua > 0 && item.buscaLogradouro[idxRua - 1] === " ") {
-        peso = 1;
-      } else if (idxRua > 0) {
         peso = 2;
-      } else if (idxBairro === 0) {
+      } else if (idxRua > 0) {
         peso = 3;
+      } else if (idxBairro === 0) {
+        peso = 4;
       }
 
       encontrados.push({ item, peso });
